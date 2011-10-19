@@ -527,13 +527,14 @@ module Authorization
             controller.send(:load_controller_object, options[:context] || controller_name)
           end
         end
-        filter_access_to :all, :attribute_check => true, :context => options[:context]
+        filter_access_to :all, :attribute_check => true, :context => options[:context], :model => options[:model]
 
         members.merge(new_actions).merge(collections).each do |action, privilege|
           if action != privilege or (options[:no_attribute_check] and options[:no_attribute_check].include?(action))
             filter_options = {
               :context          => options[:context],
-              :attribute_check  => !options[:no_attribute_check] || !options[:no_attribute_check].include?(action)
+              :attribute_check  => !options[:no_attribute_check] || !options[:no_attribute_check].include?(action),
+              :model            => options[:model]
             }
             filter_options[:require] = privilege if action != privilege
             filter_access_to(action, filter_options)
@@ -637,7 +638,7 @@ module Authorization
       else
         load_object_model = @load_object_model ||
             (@context ? @context.to_s.classify.constantize : contr.class.controller_name.classify.constantize)
-        instance_var = :"@#{load_object_model.name.underscore}"
+        instance_var = :"@#{load_object_model.name.gsub(/.*::/, '').underscore}"
         object = contr.instance_variable_get(instance_var)
         unless object
           begin
